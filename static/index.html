@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +21,10 @@
         }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
         .typing-indicator span {
             animation: blink 1.4s infinite both;
             height: 6px;
@@ -30,30 +34,57 @@
             display: inline-block;
             margin: 0 1px;
         }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink {
-            0% { opacity: 0.2; }
-            20% { opacity: 1; }
-            100% { opacity: 0.2; }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
         }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 0.2;
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.2;
+            }
+        }
+
         .messages-container {
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 transparent;
         }
+
         .dark .messages-container {
             scrollbar-color: #475569 transparent;
         }
+
         @keyframes audio-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
         }
+
         .audio-playing {
             animation: audio-pulse 1s infinite ease-in-out;
             color: #2563eb !important;
             border-color: #93c5fd !important;
             background-color: #eff6ff !important;
         }
+
         .dark .audio-playing {
             color: #60a5fa !important;
             border-color: #3b82f6 !important;
@@ -61,11 +92,16 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col items-center p-3 sm:p-6 transition-colors duration-200">
-    <div class="w-full max-w-3xl flex-1 flex flex-col bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 transition-colors duration-200 h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)]">
+
+<body
+    class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col items-center p-3 sm:p-6 transition-colors duration-200">
+    <div
+        class="w-full max-w-3xl flex-1 flex flex-col bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 transition-colors duration-200 h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)]">
         <!-- Header -->
-        <div class="bg-blue-600 dark:bg-blue-700 text-white p-4 sm:p-5 flex items-center shadow-md z-10 transition-colors duration-200">
-            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/60 rounded-full flex items-center justify-center text-2xl mr-3 sm:mr-4 shadow-sm shrink-0">
+        <div
+            class="bg-blue-600 dark:bg-blue-700 text-white p-4 sm:p-5 flex items-center shadow-md z-10 transition-colors duration-200">
+            <div
+                class="w-12 h-12 bg-blue-100 dark:bg-blue-900/60 rounded-full flex items-center justify-center text-2xl mr-3 sm:mr-4 shadow-sm shrink-0">
                 👵
             </div>
             <div>
@@ -75,53 +111,80 @@
 
             <!-- Right Controls: English Toggle + Dark Mode Toggle + Start Lesson -->
             <div class="ml-auto flex items-center space-x-1.5 sm:space-x-2">
-                <button id="englishToggleBtn" class="bg-blue-700/60 hover:bg-blue-700 dark:bg-blue-800/70 dark:hover:bg-blue-800 text-blue-100 hover:text-white px-2.5 py-2 rounded-lg transition shadow-xs flex items-center space-x-1 cursor-pointer text-xs sm:text-sm font-medium" title="Toggle English Translations">
+                <button id="englishToggleBtn"
+                    class="bg-blue-700/60 hover:bg-blue-700 dark:bg-blue-800/70 dark:hover:bg-blue-800 text-blue-100 hover:text-white px-2.5 py-2 rounded-lg transition shadow-xs flex items-center space-x-1 cursor-pointer text-xs sm:text-sm font-medium"
+                    title="Toggle English Translations">
                     <span id="globalEyeIcon" class="flex items-center"></span>
                     <span class="font-bold text-xs uppercase tracking-wider">EN</span>
                 </button>
-                <button id="themeToggleBtn" class="bg-blue-700/60 hover:bg-blue-700 dark:bg-blue-800/70 dark:hover:bg-blue-800 text-blue-100 hover:text-white p-2 sm:p-2.5 rounded-lg transition shadow-xs flex items-center justify-center cursor-pointer" title="Toggle Dark/Light Mode">
+                <button id="themeToggleBtn"
+                    class="bg-blue-700/60 hover:bg-blue-700 dark:bg-blue-800/70 dark:hover:bg-blue-800 text-blue-100 hover:text-white p-2 sm:p-2.5 rounded-lg transition shadow-xs flex items-center justify-center cursor-pointer"
+                    title="Toggle Dark/Light Mode">
                     <!-- Sun icon (shown in dark mode) -->
-                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <!-- Moon icon (shown in light mode) -->
-                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
                 </button>
-                <button id="startBtn" class="bg-white dark:bg-slate-100 text-blue-600 dark:text-blue-700 px-3 sm:px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 dark:hover:bg-white text-sm sm:text-base transition shadow-sm cursor-pointer whitespace-nowrap">
+                <button id="startBtn"
+                    class="bg-white dark:bg-slate-100 text-blue-600 dark:text-blue-700 px-3 sm:px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 dark:hover:bg-white text-sm sm:text-base transition shadow-sm cursor-pointer whitespace-nowrap">
                     Start Lesson
                 </button>
             </div>
         </div>
 
         <!-- Chat Area -->
-        <div id="chatArea" class="flex-1 p-4 sm:p-6 overflow-y-auto messages-container flex flex-col space-y-6 bg-slate-50/60 dark:bg-slate-950/50 transition-colors duration-200">
+        <div id="chatArea"
+            class="flex-1 p-4 sm:p-6 overflow-y-auto messages-container flex flex-col space-y-6 bg-slate-50/60 dark:bg-slate-950/50 transition-colors duration-200">
             <!-- Welcome Message -->
             <div class="text-center text-slate-400 dark:text-slate-500 mt-12" id="welcomeMsg">
-                <p class="mb-2 text-lg font-medium text-slate-600 dark:text-slate-300">👋 Welcome to your local Cebuano tutor!</p>
-                <p class="text-sm">Click <span class="font-semibold text-blue-600 dark:text-blue-400">"Start Lesson"</span> above to begin talking with Manang Tess.</p>
+                <p class="mb-2 text-lg font-medium text-slate-600 dark:text-slate-300">👋 Welcome to your local Cebuano
+                    tutor!</p>
+                <p class="text-sm">Click <span class="font-semibold text-blue-600 dark:text-blue-400">"Start
+                        Lesson"</span> above to begin talking with Manang Tess.</p>
             </div>
         </div>
 
         <!-- Input Area -->
-        <div class="p-3 sm:p-5 bg-white dark:bg-slate-900 border-t border-slate-200/70 dark:border-slate-800 transition-colors duration-200">
+        <div
+            class="p-3 sm:p-5 bg-white dark:bg-slate-900 border-t border-slate-200/70 dark:border-slate-800 transition-colors duration-200">
             <form id="chatForm" class="flex items-center space-x-2 sm:space-x-3">
-                <button type="button" id="recordBtn" disabled class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50 p-3 sm:p-3.5 rounded-xl transition shadow-sm flex items-center justify-center cursor-pointer shrink-0" title="Record Voice">
-                    <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                <button type="button" id="recordBtn" disabled
+                    class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50 p-3 sm:p-3.5 rounded-xl transition shadow-sm flex items-center justify-center cursor-pointer shrink-0"
+                    title="Record Voice">
+                    <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                     </svg>
-                    <svg id="stopIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden text-red-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <svg id="stopIcon" xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 hidden text-red-500 animate-pulse" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
                     </svg>
-                    <svg id="spinnerIcon" class="animate-spin h-5 w-5 hidden text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg id="spinnerIcon" class="animate-spin h-5 w-5 hidden text-blue-500"
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
                     </svg>
                 </button>
-                <input type="text" id="userInput" disabled autocomplete="off" placeholder="Type your reply in Cebuano..." class="flex-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-slate-100 dark:disabled:bg-slate-800/60 disabled:text-slate-400 dark:disabled:text-slate-600 transition shadow-sm">
-                <button type="submit" id="sendBtn" disabled class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-5 sm:px-6 py-3 rounded-xl font-semibold disabled:bg-slate-300 dark:disabled:bg-slate-700/60 disabled:text-slate-400 dark:disabled:text-slate-600 transition shadow-sm flex items-center justify-center cursor-pointer shrink-0">
+                <input type="text" id="userInput" disabled autocomplete="off"
+                    placeholder="Type your reply in Cebuano..."
+                    class="flex-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-slate-100 dark:disabled:bg-slate-800/60 disabled:text-slate-400 dark:disabled:text-slate-600 transition shadow-sm">
+                <button type="submit" id="sendBtn" disabled
+                    class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-5 sm:px-6 py-3 rounded-xl font-semibold disabled:bg-slate-300 dark:disabled:bg-slate-700/60 disabled:text-slate-400 dark:disabled:text-slate-600 transition shadow-sm flex items-center justify-center cursor-pointer shrink-0">
                     Send
                 </button>
             </form>
@@ -169,10 +232,10 @@
         // Global English translation toggle logic
         function updateGlobalEnglishUI() {
             globalEyeIcon.innerHTML = getEyeIconSvg(isEnglishVisible, 'w-4 h-4 sm:w-4.5 sm:h-4.5');
-            englishToggleBtn.title = isEnglishVisible 
-                ? "English Translations: Shown (Click to Hide)" 
+            englishToggleBtn.title = isEnglishVisible
+                ? "English Translations: Shown (Click to Hide)"
                 : "English Translations: Hidden (Click to Show)";
-            
+
             if (isEnglishVisible) {
                 englishToggleBtn.classList.remove('opacity-60');
             } else {
@@ -319,7 +382,7 @@
         function appendUserMessage(text) {
             const div = document.createElement('div');
             div.className = 'self-end bg-blue-600 text-white rounded-2xl rounded-tr-sm px-5 py-3 max-w-[85%] shadow-sm flex items-center gap-3 group';
-            
+
             div.innerHTML = `
                 <span class="break-words">${escapeHtml(text)}</span>
                 <button class="user-replay-btn opacity-70 hover:opacity-100 text-blue-100 hover:text-white p-1 rounded-full transition cursor-pointer shrink-0" title="Listen to pronunciation">
@@ -337,10 +400,83 @@
             scrollToBottom();
         }
 
+        // --- AnkiConnect Integration ---
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg text-white text-sm transition-opacity duration-300 z-50 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        async function addNoteToAnki(front, back, base64Audio = null) {
+            try {
+                let soundTag = "";
+
+                if (base64Audio) {
+                    const b64Data = base64Audio.split(',')[1];
+                    if (b64Data) {
+                        const filename = `manang_tess_${Date.now()}.mp3`;
+                        // Step 1: Explicitly store the media file first
+                        const storeMediaRes = await fetch('http://127.0.0.1:8765', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'storeMediaFile',
+                                version: 6,
+                                params: {
+                                    filename: filename,
+                                    data: b64Data
+                                }
+                            })
+                        });
+                        const storeResult = await storeMediaRes.json();
+                        if (storeResult.error) {
+                            console.error("Anki storeMediaFile error:", storeResult.error);
+                        } else {
+                            soundTag = `<br><br>[sound:${filename}]`;
+                        }
+                    }
+                }
+
+                const note = {
+                    deckName: 'Cebuano AI Tutor',
+                    modelName: 'Basic',
+                    fields: { Front: front + soundTag, Back: back },
+                    options: { allowDuplicate: false },
+                    tags: ['cebuano-ai-tutor']
+                };
+
+                const response = await fetch('http://127.0.0.1:8765', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'addNote',
+                        version: 6,
+                        params: { note: note }
+                    })
+                });
+
+                const result = await response.json();
+                if (result.error) {
+                    showToast(`Anki Error: ${result.error}`, true);
+                } else {
+                    showToast(`Added to Anki: "${front}"`);
+                }
+            } catch (err) {
+                showToast("Failed to connect to Anki. Is Anki open with AnkiConnect installed?", true);
+                console.error("AnkiConnect error:", err);
+            }
+        }
+        // -------------------------------
+
         function formatCebuanoWithTooltips(text, rawGlossary) {
             if (!text) return '';
             if (!rawGlossary) return escapeHtml(text);
-            
+
             // Normalize glossary to dict if it's passed as an array of {word, definition}
             let glossary = rawGlossary;
             if (Array.isArray(rawGlossary)) {
@@ -351,16 +487,18 @@
                     }
                 });
             }
-            
+
             return text.split(' ').map(word => {
                 const cleanWord = word.replace(/[.,!?";:()[\]]/g, '').toLowerCase();
                 const definition = glossary[cleanWord];
-                
+
                 if (definition) {
-                    return `<span class="group relative inline-block cursor-help border-b border-dashed border-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    const escapedFront = escapeHtml(cleanWord).replace(/'/g, "\\'");
+                    const escapedBack = escapeHtml(definition).replace(/'/g, "\\'");
+                    return `<span onclick="addNoteToAnki('${escapedFront}', '${escapedBack}')" class="group relative inline-block cursor-pointer border-b border-dashed border-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" title="Click to add to Anki">
                         ${escapeHtml(word)}
                         <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-max max-w-[200px] whitespace-normal opacity-0 transition-opacity group-hover:opacity-100 bg-slate-800 dark:bg-slate-700 text-white text-xs rounded py-1.5 px-2 z-10 shadow-lg text-center leading-tight">
-                            ${escapeHtml(definition)}
+                            ${escapeHtml(definition)} <br/><span class="text-[10px] text-slate-300">(Click to add to Anki)</span>
                             <svg class="absolute text-slate-800 dark:text-slate-700 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
                         </span>
                     </span>`;
@@ -372,11 +510,11 @@
         function appendTutorMessage(data) {
             const wrapper = document.createElement('div');
             wrapper.className = 'tutor-bubble-wrapper self-start max-w-[90%] sm:max-w-[80%]';
-            
+
             // Main message bubble with Replay Audio Button and English toggle
             const msgDiv = document.createElement('div');
             msgDiv.className = 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 rounded-2xl rounded-tl-sm p-4 sm:p-5 shadow-sm mb-2 transition-colors duration-200';
-            
+
             msgDiv.innerHTML = `
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex-1 min-w-0">
@@ -388,12 +526,17 @@
                             </button>
                         </div>
                     </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        <button class="tutor-trans-btn text-slate-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-slate-50 hover:bg-blue-50 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200 hover:border-blue-300 dark:border-slate-600 dark:hover:border-blue-500 rounded-full p-2.5 transition shadow-xs flex items-center justify-center cursor-pointer" title="${isEnglishVisible ? 'Hide English translation' : 'Show English translation'}">
-                            ${getEyeIconSvg(isEnglishVisible, 'w-4 h-4')}
-                        </button>
-                        <button class="tutor-replay-btn text-slate-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-slate-50 hover:bg-blue-50 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200 hover:border-blue-300 dark:border-slate-600 dark:hover:border-blue-500 rounded-full p-2.5 transition shadow-xs flex items-center justify-center cursor-pointer" title="Replay Cebuano audio">
-                            ${getSpeakerIconSvg('w-5 h-5')}
+                    <div class="flex flex-col items-center gap-1.5 shrink-0">
+                        <div class="flex items-center gap-1.5">
+                            <button class="tutor-trans-btn text-slate-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-slate-50 hover:bg-blue-50 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200 hover:border-blue-300 dark:border-slate-600 dark:hover:border-blue-500 rounded-full p-2.5 transition shadow-xs flex items-center justify-center cursor-pointer" title="${isEnglishVisible ? 'Hide English translation' : 'Show English translation'}">
+                                ${getEyeIconSvg(isEnglishVisible, 'w-4 h-4')}
+                            </button>
+                            <button class="tutor-replay-btn text-slate-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-slate-50 hover:bg-blue-50 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200 hover:border-blue-300 dark:border-slate-600 dark:hover:border-blue-500 rounded-full p-2.5 transition shadow-xs flex items-center justify-center cursor-pointer" title="Replay Cebuano audio">
+                                ${getSpeakerIconSvg('w-5 h-5')}
+                            </button>
+                        </div>
+                        <button class="tutor-anki-btn text-xs text-slate-400 hover:text-green-600 dark:text-slate-500 dark:hover:text-green-400 font-medium px-2 py-1 transition cursor-pointer" title="Add full sentence to Anki">
+                            + Anki
                         </button>
                     </div>
                 </div>
@@ -430,6 +573,14 @@
                 toggleBubbleEnglish();
             });
 
+            const ankiBtn = msgDiv.querySelector('.tutor-anki-btn');
+            if (ankiBtn) {
+                ankiBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    addNoteToAnki(data.reply_cebuano, data.reply_english, data.audio_base64);
+                });
+            }
+
             const replayBtn = msgDiv.querySelector('.tutor-replay-btn');
             if (replayBtn) {
                 replayBtn.addEventListener('click', (e) => {
@@ -449,10 +600,10 @@
                 const corrDiv = document.createElement('div');
                 corrDiv.className = 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl p-4 shadow-sm mt-3 transition-colors duration-200';
                 corrDiv.innerHTML = '<p class="text-amber-800 dark:text-amber-300 font-semibold mb-2.5 flex items-center"><span>⚠️ Corrections</span></p>';
-                
+
                 const ul = document.createElement('ul');
                 ul.className = 'space-y-3';
-                
+
                 data.corrections.forEach(c => {
                     const li = document.createElement('li');
                     li.className = 'text-sm text-amber-950 dark:text-amber-200';
@@ -481,7 +632,7 @@
                 corrDiv.appendChild(ul);
                 wrapper.appendChild(corrDiv);
             }
-            
+
             chatArea.appendChild(wrapper);
             scrollToBottom();
 
@@ -518,7 +669,7 @@
         startBtn.addEventListener('click', async () => {
             startBtn.style.display = 'none';
             if (welcomeMsg) welcomeMsg.remove();
-            
+
             showTyping();
             try {
                 const res = await fetch('/api/start', { method: 'POST' });
@@ -637,4 +788,5 @@
         });
     </script>
 </body>
+
 </html>
