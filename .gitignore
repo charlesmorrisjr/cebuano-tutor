@@ -1,0 +1,21 @@
+# Environment and secrets
+.env
+.env*.local
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+ENV/
+
+# Temporary audio files
+response.mp3
+*.mp3
+*.wav
+
+# IDE configs
+.idea/
+.vscode/
