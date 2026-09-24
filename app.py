@@ -31,9 +31,14 @@ class Correction(BaseModel):
     corrected_text: str
     explanation: str
 
+class WordDefinition(BaseModel):
+    word: str
+    definition: str
+
 class TutorResponse(BaseModel):
     reply_cebuano: str
     reply_english: str
+    glossary: list[WordDefinition]
     mistakes_found: bool
     corrections: list[Correction]
 
@@ -60,11 +65,22 @@ tutor_config = types.GenerateContentConfig(
         "Always evaluate the user's last message for grammatical, lexical, and focus-affix errors."
         "Pay special attention to Austronesian focus-affix errors (mo-, nag-, gi-, -on, i-). "
         "You must return your response strictly matching the required JSON schema. The explanation in class Correction should explain the error and the correction to an English speaker who is learning Cebuano."
+        "Also, provide a glossary list for EVERY SINGLE WORD you use in reply_cebuano. You MUST NOT skip any words; even small connecting words, pronouns, or particles must be included. Each item in glossary must have 'word' (lowercase word without punctuation) and 'definition' (short English definition, e.g. word='maayong', definition='good')."
     ),
     temperature=0.3,
     response_mime_type="application/json",
     response_schema=TutorResponse,
 )
+
+def format_tutor_response(data: dict) -> dict:
+    """Helper to convert glossary list to dictionary for frontend lookups."""
+    if isinstance(data.get("glossary"), list):
+        data["glossary"] = {
+            item["word"].lower().strip(): item["definition"]
+            for item in data["glossary"]
+            if isinstance(item, dict) and "word" in item and "definition" in item
+        }
+    return data
 
 # Global chat session (single-user design)
 chat_session = None
@@ -104,7 +120,7 @@ async def start_lesson():
     )
     
     response = chat_session.send_message("Hello, I am ready to start my Cebuano lesson.")
-    tutor_data = json.loads(response.text)
+    tutor_data = format_tutor_response(json.loads(response.text))
     
     # Generate TTS audio
     audio_url = await generate_audio_base64(tutor_data['reply_cebuano'])
@@ -123,7 +139,7 @@ async def send_message(user_msg: UserMessage):
         )
         
     response = chat_session.send_message(user_msg.message)
-    tutor_data = json.loads(response.text)
+    tutor_data = format_tutor_response(json.loads(response.text))
     
     # Generate TTS audio
     audio_url = await generate_audio_base64(tutor_data['reply_cebuano'])

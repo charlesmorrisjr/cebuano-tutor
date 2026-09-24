@@ -337,6 +337,38 @@
             scrollToBottom();
         }
 
+        function formatCebuanoWithTooltips(text, rawGlossary) {
+            if (!text) return '';
+            if (!rawGlossary) return escapeHtml(text);
+            
+            // Normalize glossary to dict if it's passed as an array of {word, definition}
+            let glossary = rawGlossary;
+            if (Array.isArray(rawGlossary)) {
+                glossary = {};
+                rawGlossary.forEach(item => {
+                    if (item && item.word && item.definition) {
+                        glossary[item.word.toLowerCase().trim()] = item.definition;
+                    }
+                });
+            }
+            
+            return text.split(' ').map(word => {
+                const cleanWord = word.replace(/[.,!?";:()[\]]/g, '').toLowerCase();
+                const definition = glossary[cleanWord];
+                
+                if (definition) {
+                    return `<span class="group relative inline-block cursor-help border-b border-dashed border-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        ${escapeHtml(word)}
+                        <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-max max-w-[200px] whitespace-normal opacity-0 transition-opacity group-hover:opacity-100 bg-slate-800 dark:bg-slate-700 text-white text-xs rounded py-1.5 px-2 z-10 shadow-lg text-center leading-tight">
+                            ${escapeHtml(definition)}
+                            <svg class="absolute text-slate-800 dark:text-slate-700 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                        </span>
+                    </span>`;
+                }
+                return escapeHtml(word);
+            }).join(' ');
+        }
+
         function appendTutorMessage(data) {
             const wrapper = document.createElement('div');
             wrapper.className = 'tutor-bubble-wrapper self-start max-w-[90%] sm:max-w-[80%]';
@@ -348,7 +380,7 @@
             msgDiv.innerHTML = `
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex-1 min-w-0">
-                        <p class="text-lg font-medium text-slate-900 dark:text-slate-100 leading-relaxed">${escapeHtml(data.reply_cebuano)}</p>
+                        <p class="text-lg font-medium text-slate-900 dark:text-slate-100 leading-relaxed">${formatCebuanoWithTooltips(data.reply_cebuano, data.glossary)}</p>
                         <div class="english-section mt-2">
                             <p class="reply-english text-sm text-slate-500 dark:text-slate-400 italic ${isEnglishVisible ? '' : 'hidden'}">📖 ${escapeHtml(data.reply_english)}</p>
                             <button class="reply-english-peek text-xs text-blue-600 dark:text-blue-400 hover:underline italic font-medium cursor-pointer ${isEnglishVisible ? 'hidden' : 'inline-flex'} items-center gap-1">
