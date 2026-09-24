@@ -38,6 +38,9 @@ class TutorResponse(BaseModel):
 class UserMessage(BaseModel):
     message: str
 
+class TTSRequest(BaseModel):
+    text: str
+
 # FastAPI App
 app = FastAPI(title="Manang Tess Cebuano Tutor")
 
@@ -114,6 +117,11 @@ async def send_message(user_msg: UserMessage):
     tutor_data['audio_base64'] = audio_url
     
     return tutor_data
+
+@app.post("/api/tts")
+async def text_to_speech(req: TTSRequest):
+    audio_url = await generate_audio_base64(req.text)
+    return {"audio_base64": audio_url}
 
 if __name__ == "__main__":
     import uvicorn

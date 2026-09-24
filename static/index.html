@@ -28,6 +28,16 @@
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 transparent;
         }
+        @keyframes audio-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        .audio-playing {
+            animation: audio-pulse 1s infinite ease-in-out;
+            color: #2563eb !important;
+            border-color: #93c5fd !important;
+            background-color: #eff6ff !important;
+        }
     </style>
 </head>
 <body class="bg-slate-50 h-screen flex flex-col items-center p-4 sm:p-8">
@@ -41,7 +51,7 @@
                 <h1 class="text-xl font-bold tracking-tight">Manang Tess</h1>
                 <p class="text-blue-100 text-sm font-medium">Your Cebuano AI Tutor</p>
             </div>
-            <button id="startBtn" class="ml-auto bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition shadow-sm">
+            <button id="startBtn" class="ml-auto bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition shadow-sm cursor-pointer">
                 Start Lesson
             </button>
         </div>
@@ -50,8 +60,8 @@
         <div id="chatArea" class="flex-1 p-4 sm:p-6 overflow-y-auto messages-container flex flex-col space-y-6 bg-slate-50/50">
             <!-- Welcome Message -->
             <div class="text-center text-slate-400 mt-10" id="welcomeMsg">
-                <p class="mb-2">👋 Welcome to your local Cebuano tutor!</p>
-                <p class="text-sm">Click "Start Lesson" to begin talking with Manang Tess.</p>
+                <p class="mb-2 text-lg">👋 Welcome to your local Cebuano tutor!</p>
+                <p class="text-sm">Click <span class="font-semibold text-blue-600">"Start Lesson"</span> above to begin talking with Manang Tess.</p>
             </div>
         </div>
 
@@ -59,7 +69,7 @@
         <div class="p-4 sm:p-6 bg-white border-t border-slate-100">
             <form id="chatForm" class="flex space-x-2 sm:space-x-4">
                 <input type="text" id="userInput" disabled autocomplete="off" placeholder="Type your reply in Cebuano..." class="flex-1 border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400 transition shadow-sm">
-                <button type="submit" id="sendBtn" disabled class="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:bg-slate-300 transition shadow-sm flex items-center justify-center">
+                <button type="submit" id="sendBtn" disabled class="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:bg-slate-300 transition shadow-sm flex items-center justify-center cursor-pointer">
                     Send
                 </button>
             </form>
@@ -78,33 +88,143 @@
         const welcomeMsg = document.getElementById('welcomeMsg');
         const audioPlayer = document.getElementById('audioPlayer');
 
+        let currentPlayingBtn = null;
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
         function scrollToBottom() {
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
+        // Speaker icon SVG helper
+        function getSpeakerIconSvg(cls = "w-4 h-4") {
+            return `
+                <svg xmlns="http://www.w3.org/2000/svg" class="${cls}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+            `;
+        }
+
+        function playAudio(audioSrc, btnElement) {
+            if (!audioSrc) return;
+
+            if (currentPlayingBtn) {
+                currentPlayingBtn.classList.remove('audio-playing');
+            }
+
+            audioPlayer.src = audioSrc;
+            audioPlayer.currentTime = 0;
+
+            if (btnElement) {
+                currentPlayingBtn = btnElement;
+                btnElement.classList.add('audio-playing');
+            }
+
+            audioPlayer.play().catch(e => {
+                console.error("Audio playback error:", e);
+                if (btnElement) btnElement.classList.remove('audio-playing');
+            });
+        }
+
+        audioPlayer.addEventListener('ended', () => {
+            if (currentPlayingBtn) {
+                currentPlayingBtn.classList.remove('audio-playing');
+                currentPlayingBtn = null;
+            }
+        });
+
+        audioPlayer.addEventListener('pause', () => {
+            if (currentPlayingBtn) {
+                currentPlayingBtn.classList.remove('audio-playing');
+                currentPlayingBtn = null;
+            }
+        });
+
+        async function fetchAndPlayTTS(text, btnElement) {
+            if (!text) return;
+            if (btnElement) {
+                btnElement.classList.add('animate-pulse');
+            }
+            try {
+                const res = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const data = await res.json();
+                if (data.audio_base64) {
+                    playAudio(data.audio_base64, btnElement);
+                }
+            } catch (err) {
+                console.error("TTS generation error:", err);
+            } finally {
+                if (btnElement) {
+                    btnElement.classList.remove('animate-pulse');
+                }
+            }
+        }
+
         function appendUserMessage(text) {
             const div = document.createElement('div');
-            div.className = 'self-end bg-blue-600 text-white rounded-2xl rounded-tr-sm px-5 py-3 max-w-[85%] shadow-sm';
-            div.textContent = text;
+            div.className = 'self-end bg-blue-600 text-white rounded-2xl rounded-tr-sm px-5 py-3 max-w-[85%] shadow-sm flex items-center gap-3 group';
+            
+            div.innerHTML = `
+                <span class="break-words">${escapeHtml(text)}</span>
+                <button class="user-replay-btn opacity-70 hover:opacity-100 text-blue-100 hover:text-white p-1 rounded-full transition cursor-pointer shrink-0" title="Listen to pronunciation">
+                    ${getSpeakerIconSvg('w-4 h-4')}
+                </button>
+            `;
+
+            const replayBtn = div.querySelector('.user-replay-btn');
+            replayBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fetchAndPlayTTS(text, replayBtn);
+            });
+
             chatArea.appendChild(div);
             scrollToBottom();
         }
 
         function appendTutorMessage(data) {
             const wrapper = document.createElement('div');
-            wrapper.className = 'self-start max-w-[85%] sm:max-w-[75%]';
+            wrapper.className = 'self-start max-w-[90%] sm:max-w-[80%]';
             
-            // Main message
+            // Main message bubble with Replay Audio Button
             const msgDiv = document.createElement('div');
-            msgDiv.className = 'bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm mb-2';
+            msgDiv.className = 'bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-tl-sm p-4 sm:p-5 shadow-sm mb-2';
             
             msgDiv.innerHTML = `
-                <p class="text-lg mb-2 font-medium">${data.reply_cebuano}</p>
-                <p class="text-sm text-slate-500 italic">📖 ${data.reply_english}</p>
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1">
+                        <p class="text-lg font-medium text-slate-900 leading-relaxed">${escapeHtml(data.reply_cebuano)}</p>
+                        <p class="text-sm text-slate-500 italic mt-2">📖 ${escapeHtml(data.reply_english)}</p>
+                    </div>
+                    <button class="tutor-replay-btn shrink-0 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-full p-2.5 transition shadow-xs flex items-center justify-center cursor-pointer" title="Replay Cebuano audio">
+                        ${getSpeakerIconSvg('w-5 h-5')}
+                    </button>
+                </div>
             `;
+
+            const replayBtn = msgDiv.querySelector('.tutor-replay-btn');
+            if (replayBtn) {
+                replayBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (data.audio_base64) {
+                        playAudio(data.audio_base64, replayBtn);
+                    } else {
+                        fetchAndPlayTTS(data.reply_cebuano, replayBtn);
+                    }
+                });
+            }
+
             wrapper.appendChild(msgDiv);
 
-            // Corrections
+            // Corrections block
             if (data.mistakes_found && data.corrections && data.corrections.length > 0) {
                 const corrDiv = document.createElement('div');
                 corrDiv.className = 'bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm mt-3';
@@ -117,10 +237,25 @@
                     const li = document.createElement('li');
                     li.className = 'text-sm text-amber-900';
                     li.innerHTML = `
-                        <div class="flex items-start"><span class="font-semibold w-20 shrink-0 text-slate-500">You said:</span><span class="line-through text-red-500 bg-red-50 px-1 rounded">${c.user_text}</span></div>
-                        <div class="flex items-start mt-1"><span class="font-semibold w-20 shrink-0 text-slate-500">Should be:</span><span class="text-green-700 bg-green-50 px-1 rounded font-medium">${c.corrected_text}</span></div>
-                        <div class="flex items-start mt-1"><span class="font-semibold w-20 shrink-0 text-slate-500">Why:</span><span>${c.explanation}</span></div>
+                        <div class="flex items-start"><span class="font-semibold w-20 shrink-0 text-slate-500">You said:</span><span class="line-through text-red-500 bg-red-50 px-1.5 py-0.5 rounded">${escapeHtml(c.user_text)}</span></div>
+                        <div class="flex items-center mt-1.5 gap-1.5">
+                            <span class="font-semibold w-20 shrink-0 text-slate-500">Should be:</span>
+                            <span class="text-green-700 bg-green-50 px-1.5 py-0.5 rounded font-medium">${escapeHtml(c.corrected_text)}</span>
+                            <button class="corr-audio-btn text-amber-600 hover:text-green-700 hover:bg-green-100 p-1 rounded-full transition cursor-pointer" title="Listen to correct pronunciation">
+                                ${getSpeakerIconSvg('w-3.5 h-3.5')}
+                            </button>
+                        </div>
+                        <div class="flex items-start mt-1"><span class="font-semibold w-20 shrink-0 text-slate-500">Why:</span><span>${escapeHtml(c.explanation)}</span></div>
                     `;
+
+                    const corrBtn = li.querySelector('.corr-audio-btn');
+                    if (corrBtn) {
+                        corrBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            fetchAndPlayTTS(c.corrected_text, corrBtn);
+                        });
+                    }
+
                     ul.appendChild(li);
                 });
                 corrDiv.appendChild(ul);
@@ -130,10 +265,9 @@
             chatArea.appendChild(wrapper);
             scrollToBottom();
 
-            // Play audio
+            // Auto-play initial audio
             if (data.audio_base64) {
-                audioPlayer.src = data.audio_base64;
-                audioPlayer.play().catch(e => console.error("Audio playback failed:", e));
+                playAudio(data.audio_base64, replayBtn);
             }
         }
 
@@ -196,7 +330,7 @@
                 appendTutorMessage(data);
             } catch (err) {
                 hideTyping();
-                alert("Message failed to send.");
+                alert("Message failed to send. Check console/logs.");
             }
             setInputState(true);
         });
