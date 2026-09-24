@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manang Tess - Cebuano Tutor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .typing-indicator span {
+            animation: blink 1.4s infinite both;
+            height: 6px;
+            width: 6px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 1px;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            20% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+        .messages-container {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col items-center p-4 sm:p-8">
+    <div class="w-full max-w-3xl flex-1 flex flex-col bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-100">
+        <!-- Header -->
+        <div class="bg-blue-600 text-white p-4 sm:p-6 flex items-center shadow-md z-10">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl mr-4 shadow-sm">
+                👵
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Manang Tess</h1>
+                <p class="text-blue-100 text-sm font-medium">Your Cebuano AI Tutor</p>
+            </div>
+            <button id="startBtn" class="ml-auto bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition shadow-sm">
+                Start Lesson
+            </button>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="chatArea" class="flex-1 p-4 sm:p-6 overflow-y-auto messages-container flex flex-col space-y-6 bg-slate-50/50">
+            <!-- Welcome Message -->
+            <div class="text-center text-slate-400 mt-10" id="welcomeMsg">
+                <p class="mb-2">👋 Welcome to your local Cebuano tutor!</p>
+                <p class="text-sm">Click "Start Lesson" to begin talking with Manang Tess.</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 sm:p-6 bg-white border-t border-slate-100">
+            <form id="chatForm" class="flex space-x-2 sm:space-x-4">
+                <input type="text" id="userInput" disabled autocomplete="off" placeholder="Type your reply in Cebuano..." class="flex-1 border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400 transition shadow-sm">
+                <button type="submit" id="sendBtn" disabled class="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:bg-slate-300 transition shadow-sm flex items-center justify-center">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden Audio Player -->
+    <audio id="audioPlayer" class="hidden"></audio>
+
+    <script>
+        const chatArea = document.getElementById('chatArea');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const startBtn = document.getElementById('startBtn');
+        const welcomeMsg = document.getElementById('welcomeMsg');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        function scrollToBottom() {
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function appendUserMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'self-end bg-blue-600 text-white rounded-2xl rounded-tr-sm px-5 py-3 max-w-[85%] shadow-sm';
+            div.textContent = text;
+            chatArea.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendTutorMessage(data) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'self-start max-w-[85%] sm:max-w-[75%]';
+            
+            // Main message
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm mb-2';
+            
+            msgDiv.innerHTML = `
+                <p class="text-lg mb-2 font-medium">${data.reply_cebuano}</p>
+                <p class="text-sm text-slate-500 italic">📖 ${data.reply_english}</p>
+            `;
+            wrapper.appendChild(msgDiv);
+
+            // Corrections
+            if (data.mistakes_found && data.corrections && data.corrections.length > 0) {
+                const corrDiv = document.createElement('div');
+                corrDiv.className = 'bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm mt-3';
+                corrDiv.innerHTML = '<p class="text-amber-800 font-semibold mb-2 flex items-center"><span>⚠️ Corrections</span></p>';
+                
+                const ul = document.createElement('ul');
+                ul.className = 'space-y-3';
+                
+                data.corrections.forEach(c => {
+                    const li = document.createElement('li');
+                    li.className = 'text-sm text-amber-900';
+                    li.innerHTML = `
+                        <div class="flex items-start"><span class="font-semibold w-20 shrink-0 text-slate-500">You said:</span><span class="line-through text-red-500 bg-red-50 px-1 rounded">${c.user_text}</span></div>
+                        <div class="flex items-start mt-1"><span class="font-semibold w-20 shrink-0 text-slate-500">Should be:</span><span class="text-green-700 bg-green-50 px-1 rounded font-medium">${c.corrected_text}</span></div>
+                        <div class="flex items-start mt-1"><span class="font-semibold w-20 shrink-0 text-slate-500">Why:</span><span>${c.explanation}</span></div>
+                    `;
+                    ul.appendChild(li);
+                });
+                corrDiv.appendChild(ul);
+                wrapper.appendChild(corrDiv);
+            }
+            
+            chatArea.appendChild(wrapper);
+            scrollToBottom();
+
+            // Play audio
+            if (data.audio_base64) {
+                audioPlayer.src = data.audio_base64;
+                audioPlayer.play().catch(e => console.error("Audio playback failed:", e));
+            }
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.id = 'typingIndicator';
+            div.className = 'self-start bg-slate-100 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm flex items-center space-x-2 text-sm text-slate-500 font-medium';
+            div.innerHTML = '<span>Manang Tess is thinking</span> <div class="typing-indicator"><span></span><span></span><span></span></div>';
+            chatArea.appendChild(div);
+            scrollToBottom();
+        }
+
+        function hideTyping() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        function setInputState(enabled) {
+            userInput.disabled = !enabled;
+            sendBtn.disabled = !enabled;
+            if (enabled) userInput.focus();
+        }
+
+        startBtn.addEventListener('click', async () => {
+            startBtn.style.display = 'none';
+            if (welcomeMsg) welcomeMsg.remove();
+            
+            showTyping();
+            try {
+                const res = await fetch('/api/start', { method: 'POST' });
+                const data = await res.json();
+                hideTyping();
+                appendTutorMessage(data);
+                setInputState(true);
+            } catch (err) {
+                hideTyping();
+                alert("Failed to start lesson. Check backend logs.");
+                startBtn.style.display = 'block';
+            }
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            userInput.value = '';
+            setInputState(false);
+            appendUserMessage(text);
+            showTyping();
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await res.json();
+                hideTyping();
+                appendTutorMessage(data);
+            } catch (err) {
+                hideTyping();
+                alert("Message failed to send.");
+            }
+            setInputState(true);
+        });
+    </script>
+</body>
+</html>
