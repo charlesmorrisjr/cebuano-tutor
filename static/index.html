@@ -5,7 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manang Tess - Cebuano Tutor</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Immediately initialize dark mode from localStorage or system preference to prevent flash
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .typing-indicator span {
@@ -28,6 +41,9 @@
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 transparent;
         }
+        .dark .messages-container {
+            scrollbar-color: #475569 transparent;
+        }
         @keyframes audio-pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.15); }
@@ -38,38 +54,57 @@
             border-color: #93c5fd !important;
             background-color: #eff6ff !important;
         }
+        .dark .audio-playing {
+            color: #60a5fa !important;
+            border-color: #3b82f6 !important;
+            background-color: rgba(30, 58, 138, 0.4) !important;
+        }
     </style>
 </head>
-<body class="bg-slate-50 h-screen flex flex-col items-center p-4 sm:p-8">
-    <div class="w-full max-w-3xl flex-1 flex flex-col bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-100">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col items-center p-3 sm:p-6 transition-colors duration-200">
+    <div class="w-full max-w-3xl flex-1 flex flex-col bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 transition-colors duration-200 h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)]">
         <!-- Header -->
-        <div class="bg-blue-600 text-white p-4 sm:p-6 flex items-center shadow-md z-10">
-            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl mr-4 shadow-sm">
+        <div class="bg-blue-600 dark:bg-blue-700 text-white p-4 sm:p-5 flex items-center shadow-md z-10 transition-colors duration-200">
+            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/60 rounded-full flex items-center justify-center text-2xl mr-3 sm:mr-4 shadow-sm shrink-0">
                 👵
             </div>
             <div>
                 <h1 class="text-xl font-bold tracking-tight">Manang Tess</h1>
-                <p class="text-blue-100 text-sm font-medium">Your Cebuano AI Tutor</p>
+                <p class="text-blue-100 dark:text-blue-200 text-xs sm:text-sm font-medium">Your Cebuano AI Tutor</p>
             </div>
-            <button id="startBtn" class="ml-auto bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition shadow-sm cursor-pointer">
-                Start Lesson
-            </button>
+
+            <!-- Right Controls: Dark Mode Toggle + Start Lesson -->
+            <div class="ml-auto flex items-center space-x-2">
+                <button id="themeToggleBtn" class="bg-blue-700/60 hover:bg-blue-700 dark:bg-blue-800/70 dark:hover:bg-blue-800 text-blue-100 hover:text-white p-2 sm:p-2.5 rounded-lg transition shadow-xs flex items-center justify-center cursor-pointer" title="Toggle Dark/Light Mode">
+                    <!-- Sun icon (shown in dark mode) -->
+                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <!-- Moon icon (shown in light mode) -->
+                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+                <button id="startBtn" class="bg-white dark:bg-slate-100 text-blue-600 dark:text-blue-700 px-3 sm:px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 dark:hover:bg-white text-sm sm:text-base transition shadow-sm cursor-pointer whitespace-nowrap">
+                    Start Lesson
+                </button>
+            </div>
         </div>
 
         <!-- Chat Area -->
-        <div id="chatArea" class="flex-1 p-4 sm:p-6 overflow-y-auto messages-container flex flex-col space-y-6 bg-slate-50/50">
+        <div id="chatArea" class="flex-1 p-4 sm:p-6 overflow-y-auto messages-container flex flex-col space-y-6 bg-slate-50/60 dark:bg-slate-950/50 transition-colors duration-200">
             <!-- Welcome Message -->
-            <div class="text-center text-slate-400 mt-10" id="welcomeMsg">
-                <p class="mb-2 text-lg">👋 Welcome to your local Cebuano tutor!</p>
-                <p class="text-sm">Click <span class="font-semibold text-blue-600">"Start Lesson"</span> above to begin talking with Manang Tess.</p>
+            <div class="text-center text-slate-400 dark:text-slate-500 mt-12" id="welcomeMsg">
+                <p class="mb-2 text-lg font-medium text-slate-600 dark:text-slate-300">👋 Welcome to your local Cebuano tutor!</p>
+                <p class="text-sm">Click <span class="font-semibold text-blue-600 dark:text-blue-400">"Start Lesson"</span> above to begin talking with Manang Tess.</p>
             </div>
         </div>
 
         <!-- Input Area -->
-        <div class="p-4 sm:p-6 bg-white border-t border-slate-100">
-            <form id="chatForm" class="flex space-x-2 sm:space-x-4">
-                <input type="text" id="userInput" disabled autocomplete="off" placeholder="Type your reply in Cebuano..." class="flex-1 border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400 transition shadow-sm">
-                <button type="submit" id="sendBtn" disabled class="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:bg-slate-300 transition shadow-sm flex items-center justify-center cursor-pointer">
+        <div class="p-3 sm:p-5 bg-white dark:bg-slate-900 border-t border-slate-200/70 dark:border-slate-800 transition-colors duration-200">
+            <form id="chatForm" class="flex space-x-2 sm:space-x-3">
+                <input type="text" id="userInput" disabled autocomplete="off" placeholder="Type your reply in Cebuano..." class="flex-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-slate-100 dark:disabled:bg-slate-800/60 disabled:text-slate-400 dark:disabled:text-slate-600 transition shadow-sm">
+                <button type="submit" id="sendBtn" disabled class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-5 sm:px-6 py-3 rounded-xl font-semibold disabled:bg-slate-300 dark:disabled:bg-slate-700/60 disabled:text-slate-400 dark:disabled:text-slate-600 transition shadow-sm flex items-center justify-center cursor-pointer shrink-0">
                     Send
                 </button>
             </form>
@@ -87,8 +122,36 @@
         const startBtn = document.getElementById('startBtn');
         const welcomeMsg = document.getElementById('welcomeMsg');
         const audioPlayer = document.getElementById('audioPlayer');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
 
         let currentPlayingBtn = null;
+
+        // Theme toggle logic
+        function updateThemeIcons() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (isDark) {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        }
+
+        updateThemeIcons();
+
+        themeToggleBtn.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+            updateThemeIcons();
+        });
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -196,15 +259,15 @@
             
             // Main message bubble with Replay Audio Button
             const msgDiv = document.createElement('div');
-            msgDiv.className = 'bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-tl-sm p-4 sm:p-5 shadow-sm mb-2';
+            msgDiv.className = 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 rounded-2xl rounded-tl-sm p-4 sm:p-5 shadow-sm mb-2 transition-colors duration-200';
             
             msgDiv.innerHTML = `
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex-1">
-                        <p class="text-lg font-medium text-slate-900 leading-relaxed">${escapeHtml(data.reply_cebuano)}</p>
-                        <p class="text-sm text-slate-500 italic mt-2">📖 ${escapeHtml(data.reply_english)}</p>
+                        <p class="text-lg font-medium text-slate-900 dark:text-slate-100 leading-relaxed">${escapeHtml(data.reply_cebuano)}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 italic mt-2">📖 ${escapeHtml(data.reply_english)}</p>
                     </div>
-                    <button class="tutor-replay-btn shrink-0 text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-full p-2.5 transition shadow-xs flex items-center justify-center cursor-pointer" title="Replay Cebuano audio">
+                    <button class="tutor-replay-btn shrink-0 text-slate-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-slate-50 hover:bg-blue-50 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200 hover:border-blue-300 dark:border-slate-600 dark:hover:border-blue-500 rounded-full p-2.5 transition shadow-xs flex items-center justify-center cursor-pointer" title="Replay Cebuano audio">
                         ${getSpeakerIconSvg('w-5 h-5')}
                     </button>
                 </div>
@@ -227,25 +290,25 @@
             // Corrections block
             if (data.mistakes_found && data.corrections && data.corrections.length > 0) {
                 const corrDiv = document.createElement('div');
-                corrDiv.className = 'bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm mt-3';
-                corrDiv.innerHTML = '<p class="text-amber-800 font-semibold mb-2 flex items-center"><span>⚠️ Corrections</span></p>';
+                corrDiv.className = 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl p-4 shadow-sm mt-3 transition-colors duration-200';
+                corrDiv.innerHTML = '<p class="text-amber-800 dark:text-amber-300 font-semibold mb-2.5 flex items-center"><span>⚠️ Corrections</span></p>';
                 
                 const ul = document.createElement('ul');
                 ul.className = 'space-y-3';
                 
                 data.corrections.forEach(c => {
                     const li = document.createElement('li');
-                    li.className = 'text-sm text-amber-900';
+                    li.className = 'text-sm text-amber-950 dark:text-amber-200';
                     li.innerHTML = `
-                        <div class="flex items-start"><span class="font-semibold w-20 shrink-0 text-slate-500">You said:</span><span class="line-through text-red-500 bg-red-50 px-1.5 py-0.5 rounded">${escapeHtml(c.user_text)}</span></div>
+                        <div class="flex items-start"><span class="font-semibold w-20 shrink-0 text-slate-500 dark:text-slate-400">You said:</span><span class="line-through text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 px-1.5 py-0.5 rounded">${escapeHtml(c.user_text)}</span></div>
                         <div class="flex items-center mt-1.5 gap-1.5">
-                            <span class="font-semibold w-20 shrink-0 text-slate-500">Should be:</span>
-                            <span class="text-green-700 bg-green-50 px-1.5 py-0.5 rounded font-medium">${escapeHtml(c.corrected_text)}</span>
-                            <button class="corr-audio-btn text-amber-600 hover:text-green-700 hover:bg-green-100 p-1 rounded-full transition cursor-pointer" title="Listen to correct pronunciation">
+                            <span class="font-semibold w-20 shrink-0 text-slate-500 dark:text-slate-400">Should be:</span>
+                            <span class="text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/60 px-1.5 py-0.5 rounded font-medium">${escapeHtml(c.corrected_text)}</span>
+                            <button class="corr-audio-btn text-amber-600 hover:text-green-700 dark:text-amber-400 dark:hover:text-green-300 hover:bg-green-100 dark:hover:bg-green-950/80 p-1 rounded-full transition cursor-pointer" title="Listen to correct pronunciation">
                                 ${getSpeakerIconSvg('w-3.5 h-3.5')}
                             </button>
                         </div>
-                        <div class="flex items-start mt-1"><span class="font-semibold w-20 shrink-0 text-slate-500">Why:</span><span>${escapeHtml(c.explanation)}</span></div>
+                        <div class="flex items-start mt-1"><span class="font-semibold w-20 shrink-0 text-slate-500 dark:text-slate-400">Why:</span><span class="text-slate-700 dark:text-slate-300">${escapeHtml(c.explanation)}</span></div>
                     `;
 
                     const corrBtn = li.querySelector('.corr-audio-btn');
@@ -274,7 +337,7 @@
         function showTyping() {
             const div = document.createElement('div');
             div.id = 'typingIndicator';
-            div.className = 'self-start bg-slate-100 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm flex items-center space-x-2 text-sm text-slate-500 font-medium';
+            div.className = 'self-start bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm flex items-center space-x-2 text-sm font-medium transition-colors duration-200';
             div.innerHTML = '<span>Manang Tess is thinking</span> <div class="typing-indicator"><span></span><span></span><span></span></div>';
             chatArea.appendChild(div);
             scrollToBottom();
