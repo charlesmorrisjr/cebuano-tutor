@@ -1,13 +1,15 @@
 import os
 import json
 import base64
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from google import genai
 from google.genai import types
 import edge_tts
+import tempfile
+from faster_whisper import WhisperModel
 
 # Load environment variables securely
 try:
@@ -67,6 +69,17 @@ tutor_config = types.GenerateContentConfig(
 # Global chat session (single-user design)
 chat_session = None
 
+# Lazy-loaded Whisper Model
+whisper_model = None
+
+def get_whisper_model():
+    global whisper_model
+    if whisper_model is None:
+        print("Loading Whisper model (small)...")
+        whisper_model = WhisperModel("small", device="cpu", compute_type="int8")
+        print("Whisper model loaded!")
+    return whisper_model
+
 async def generate_audio_base64(text: str) -> str:
     """Generates audio using edge-tts and returns it as a Base64 data URL."""
     communicate = edge_tts.Communicate(text, "fil-PH-BlessicaNeural")
@@ -122,6 +135,26 @@ async def send_message(user_msg: UserMessage):
 async def text_to_speech(req: TTSRequest):
     audio_url = await generate_audio_base64(req.text)
     return {"audio_base64": audio_url}
+
+@app.post("/api/transcribe")
+async def transcribe_audio(audio: UploadFile = File(...)):
+    model = get_whisper_model()
+    
+    # Save the uploaded file temporarily
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
+        content = await audio.read()
+        tmp.write(content)
+        tmp_path = tmp.name
+        
+    try:
+        segments, _ = model.transcribe(
+            tmp_path,
+            initial_prompt="Maayong adlaw! Kumusta ka? Gusto ko mokat-on og Bisaya."
+        )
+        text = "".join([segment.text for segment in segments]).strip()
+        return {"text": text}
+    finally:
+        os.remove(tmp_path)
 
 if __name__ == "__main__":
     import uvicorn
