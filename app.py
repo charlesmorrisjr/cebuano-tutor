@@ -1,6 +1,7 @@
 import os
 import json
 import base64
+import asyncio
 from fastapi import FastAPI, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -120,7 +121,7 @@ async def start_lesson():
         config=tutor_config
     )
     
-    response = chat_session.send_message("Hello, I am ready to start my Cebuano lesson.")
+    response = await asyncio.to_thread(chat_session.send_message, "Hello, I am ready to start my Cebuano lesson.")
     tutor_data = format_tutor_response(json.loads(response.text))
     
     # Generate TTS audio
@@ -139,7 +140,7 @@ async def send_message(user_msg: UserMessage):
             config=tutor_config
         )
         
-    response = chat_session.send_message(user_msg.message)
+    response = await asyncio.to_thread(chat_session.send_message, user_msg.message)
     tutor_data = format_tutor_response(json.loads(response.text))
     
     # Generate TTS audio
@@ -165,7 +166,8 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         tmp_path = tmp.name
         
     try:
-        segments, _ = model.transcribe(
+        segments, _ = await asyncio.to_thread(
+            model.transcribe,
             tmp_path,
             initial_prompt="Maayong adlaw! Kumusta ka? Gusto ko mokat-on og Bisaya."
         )
