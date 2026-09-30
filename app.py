@@ -47,6 +47,7 @@ class UserMessage(BaseModel):
 
 class TTSRequest(BaseModel):
     text: str
+    voice: str | None = None
 
 # FastAPI App
 app = FastAPI(title="Manang Tess Cebuano Tutor")
@@ -96,9 +97,9 @@ def get_whisper_model():
         print("Whisper model loaded!")
     return whisper_model
 
-async def generate_audio_base64(text: str) -> str:
+async def generate_audio_base64(text: str, voice: str = "fil-PH-BlessicaNeural") -> str:
     """Generates audio using edge-tts and returns it as a Base64 data URL."""
-    communicate = edge_tts.Communicate(text, "fil-PH-BlessicaNeural")
+    communicate = edge_tts.Communicate(text, voice)
     audio_data = b""
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
@@ -149,7 +150,8 @@ async def send_message(user_msg: UserMessage):
 
 @app.post("/api/tts")
 async def text_to_speech(req: TTSRequest):
-    audio_url = await generate_audio_base64(req.text)
+    voice = req.voice if req.voice else "fil-PH-BlessicaNeural"
+    audio_url = await generate_audio_base64(req.text, voice=voice)
     return {"audio_base64": audio_url}
 
 @app.post("/api/transcribe")

@@ -405,26 +405,74 @@
             `;
         }
 
-        function playAudio(audioSrc, btnElement) {
-            if (!audioSrc) return;
+        let audioQueue = [];
+        let isAudioPlaying = false;
+        let currentAudioToken = 0;
 
+        async function processAudioQueue() {
+            if (isAudioPlaying || audioQueue.length === 0) return;
+            
+            const item = audioQueue.shift();
+            isAudioPlaying = true;
+            const myToken = ++currentAudioToken;
+            
             if (currentPlayingBtn) {
                 currentPlayingBtn.classList.remove('audio-playing');
             }
-
-            audioPlayer.src = audioSrc;
-            audioPlayer.playbackRate = currentSpeed;
-            audioPlayer.currentTime = 0;
-
-            if (btnElement) {
-                currentPlayingBtn = btnElement;
-                btnElement.classList.add('audio-playing');
+            
+            try {
+                const audioSrc = await item.taskPromiseFn();
+                
+                // If another task interrupted us while awaiting, abort
+                if (currentAudioToken !== myToken) return;
+                
+                if (!audioSrc) {
+                    isAudioPlaying = false;
+                    processAudioQueue();
+                    return;
+                }
+                
+                audioPlayer.src = audioSrc;
+                audioPlayer.playbackRate = currentSpeed;
+                audioPlayer.currentTime = 0;
+                
+                if (item.btn) {
+                    currentPlayingBtn = item.btn;
+                    item.btn.classList.add('audio-playing');
+                }
+                
+                audioPlayer.play().catch(e => {
+                    console.error("Audio playback error:", e);
+                    if (item.btn) item.btn.classList.remove('audio-playing');
+                    if (currentAudioToken === myToken) {
+                        isAudioPlaying = false;
+                        processAudioQueue();
+                    }
+                });
+            } catch (err) {
+                console.error("Audio queue error:", err);
+                if (currentAudioToken === myToken) {
+                    isAudioPlaying = false;
+                    processAudioQueue();
+                }
             }
+        }
 
-            audioPlayer.play().catch(e => {
-                console.error("Audio playback error:", e);
-                if (btnElement) btnElement.classList.remove('audio-playing');
-            });
+        function queueAudioTask(taskPromiseFn, btnElement, interrupt = true) {
+            if (interrupt) {
+                audioQueue = []; // clear the queue
+                currentAudioToken++; // invalidate any active awaiting task
+                audioPlayer.pause();
+                isAudioPlaying = false;
+            }
+            
+            audioQueue.push({ taskPromiseFn: taskPromiseFn, btn: btnElement });
+            processAudioQueue();
+        }
+
+        function playAudio(audioSrc, btnElement, interrupt = true) {
+            if (!audioSrc) return;
+            queueAudioTask(() => Promise.resolve(audioSrc), btnElement, interrupt);
         }
 
         audioPlayer.addEventListener('ended', () => {
@@ -432,6 +480,8 @@
                 currentPlayingBtn.classList.remove('audio-playing');
                 currentPlayingBtn = null;
             }
+            isAudioPlaying = false;
+            processAudioQueue();
         });
 
         audioPlayer.addEventListener('pause', () => {
@@ -441,31 +491,36 @@
             }
         });
 
-        async function fetchAndPlayTTS(text, btnElement) {
+        function fetchAndPlayTTS(text, btnElement, voice = null, interrupt = true) {
             if (!text) return;
-            if (btnElement) {
-                btnElement.classList.add('animate-pulse');
-            }
-            try {
-                const res = await fetch('/api/tts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: text })
-                });
-                const data = await res.json();
-                if (data.audio_base64) {
-                    playAudio(data.audio_base64, btnElement);
-                }
-            } catch (err) {
-                console.error("TTS generation error:", err);
-            } finally {
+            
+            queueAudioTask(async () => {
                 if (btnElement) {
-                    btnElement.classList.remove('animate-pulse');
+                    btnElement.classList.add('animate-pulse');
                 }
-            }
+                try {
+                    const payload = { text: text };
+                    if (voice) payload.voice = voice;
+                    
+                    const res = await fetch('/api/tts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    return data.audio_base64;
+                } catch (err) {
+                    console.error("TTS generation error:", err);
+                    return null;
+                } finally {
+                    if (btnElement) {
+                        btnElement.classList.remove('animate-pulse');
+                    }
+                }
+            }, btnElement, interrupt);
         }
 
-        function appendUserMessage(text) {
+        function appendUserMessage(text, autoPlay = false) {
             const div = document.createElement('div');
             div.className = 'self-end bg-blue-600 text-white rounded-2xl rounded-tr-sm px-5 py-3 max-w-[85%] shadow-sm flex items-center gap-3 group';
 
@@ -479,11 +534,15 @@
             const replayBtn = div.querySelector('.user-replay-btn');
             replayBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                fetchAndPlayTTS(text, replayBtn);
+                fetchAndPlayTTS(text, replayBtn, 'fil-PH-AngeloNeural');
             });
 
             chatArea.appendChild(div);
             scrollToBottom();
+            
+            if (autoPlay) {
+                fetchAndPlayTTS(text, replayBtn, 'fil-PH-AngeloNeural', false);
+            }
         }
 
         // --- AnkiConnect Integration ---
@@ -724,7 +783,7 @@
 
             // Auto-play initial audio
             if (data.audio_base64) {
-                playAudio(data.audio_base64, replayBtn);
+                playAudio(data.audio_base64, replayBtn, false);
             }
         }
 
@@ -777,7 +836,7 @@
 
             userInput.value = '';
             setInputState(false);
-            appendUserMessage(text);
+            appendUserMessage(text, true);
             showTyping();
 
             try {
