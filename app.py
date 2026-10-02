@@ -11,6 +11,7 @@ from google.genai import types
 import edge_tts
 import tempfile
 from faster_whisper import WhisperModel
+from data.scenarios import SCENARIOS
 
 # Load environment variables securely
 try:
@@ -50,6 +51,9 @@ class TTSRequest(BaseModel):
     text: str
     voice: str | None = None
 
+class StartRequest(BaseModel):
+    scenario_id: str | None = None
+
 # FastAPI App
 app = FastAPI(title="Manang Tess Cebuano Tutor")
 
@@ -60,19 +64,33 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Initialize GenAI Client
 client = genai.Client()
 
-tutor_config = types.GenerateContentConfig(
-    system_instruction=(
+def get_tutor_config(scenario_id=None):
+    base_instruction = (
         "You are a warm, encouraging Cebuano language tutor named Manang Tess. "
         "The user is a beginner. Respond primarily in simple Metro Cebu Bisaya. "
         "Always evaluate the user's last message for grammatical, lexical, and focus-affix errors."
         "Pay special attention to Austronesian focus-affix errors (mo-, nag-, gi-, -on, i-). "
         "You must return your response strictly matching the required JSON schema. The explanation in class Correction should explain the error and the correction to an English speaker who is learning Cebuano."
         "Also, provide a glossary list for EVERY SINGLE WORD you use in reply_cebuano. You MUST NOT skip any words; even small connecting words, pronouns, or particles must be included. Each item in glossary must have 'word' (lowercase word without punctuation) and 'definition' (short English definition, e.g. word='maayong', definition='good')."
-    ),
-    temperature=0.3,
-    response_mime_type="application/json",
-    response_schema=TutorResponse,
-)
+    )
+    if scenario_id and scenario_id in SCENARIOS:
+        scenario = SCENARIOS[scenario_id]
+        scenario_context = f"\n\nCURRENT SCENARIO: {scenario['title_eng']}\n" \
+                           f"Setting: {scenario['setting']}\n" \
+                           f"Your Role: {scenario['tutor_role']}\n" \
+                           f"User Role: {scenario['user_role']}\n" \
+                           f"Goal: {scenario['goal']}\n" \
+                           f"Key Vocabulary to reinforce: {', '.join(scenario['key_vocab'])}"
+        base_instruction += scenario_context
+        
+    return types.GenerateContentConfig(
+        system_instruction=base_instruction,
+        temperature=0.3,
+        response_mime_type="application/json",
+        response_schema=TutorResponse,
+    )
+
+current_scenario_id = None
 
 def format_tutor_response(data: dict) -> dict:
     """Helper to convert glossary list to dictionary for frontend lookups."""
@@ -113,15 +131,26 @@ async def generate_audio_base64(text: str, voice: str = "fil-PH-BlessicaNeural")
 async def get_index():
     return FileResponse("static/index.html")
 
+@app.get("/api/scenarios")
+async def get_scenarios():
+    return list(SCENARIOS.values())
+
 @app.post("/api/start")
-async def start_lesson():
-    global chat_session
+async def start_lesson(req: StartRequest):
+    global chat_session, current_scenario_id
+    current_scenario_id = req.scenario_id
+    
     chat_session = client.chats.create(
         model="gemini-3.5-flash-lite", # Falls back gracefully if using standard APIs
-        config=tutor_config
+        config=get_tutor_config(req.scenario_id)
     )
     
-    response = await asyncio.to_thread(chat_session.send_message, "Hello, I am ready to start my Cebuano lesson.")
+    first_message = "Hello, I am ready to start my Cebuano lesson."
+    if req.scenario_id and req.scenario_id in SCENARIOS:
+        scenario = SCENARIOS[req.scenario_id]
+        first_message = f"[{scenario['title_eng']}] {scenario['starter_prompt']} Reply ONLY in valid JSON matching the schema."
+        
+    response = await asyncio.to_thread(chat_session.send_message, first_message)
     tutor_data = format_tutor_response(json.loads(response.text))
     
     # Generate TTS audio
@@ -137,7 +166,7 @@ async def send_message(user_msg: UserMessage):
         # Failsafe if user refreshed the page and continued chatting
         chat_session = client.chats.create(
             model="gemini-3.5-flash-lite",
-            config=tutor_config
+            config=get_tutor_config(current_scenario_id)
         )
         
     response = await asyncio.to_thread(chat_session.send_message, user_msg.message)
